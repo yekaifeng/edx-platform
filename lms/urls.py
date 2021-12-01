@@ -224,11 +224,6 @@ urlpatterns += [
     url(r'^openassessment/fileupload/', include('openassessment.fileupload.urls')),
 ]
 
-# Enhanced Staff Grader for openresponseassessments
-urlpatterns += [
-    url(r'^courses/{}/staff_grader/'.format(settings.COURSE_ID_PATTERN), include('openassessment.staff_grader.urls'))
-]
-
 urlpatterns += [
     url(r'^support/', include('lms.djangoapps.support.urls')),
 ]
