@@ -131,18 +131,34 @@ check-types: ## run static type-checking tests
 
 # These make targets currently only build LMS images.
 docker_build:
-	docker build . -f Dockerfile --target lms -t openedx/edx-platform
-	docker build . -f Dockerfile --target lms-newrelic -t openedx/edx-platform:latest-newrelic
+	docker build . -f Dockerfile --target lms -t openedx/lms
+	docker build . -f Dockerfile --target lms-dev -t openedx/lms-dev
+	docker build . -f Dockerfile --target studio -t openedx/studio
+	docker build . -f Dockerfile --target studio-dev -t openedx/studio-dev
 
 docker_tag: docker_build
-	docker tag openedx/edx-platform openedx/edx-platform:${GITHUB_SHA}
-	docker tag openedx/edx-platform:latest-newrelic openedx/edx-platform:${GITHUB_SHA}-newrelic
+	docker tag openedx/lms openedx/lms:${GITHUB_SHA}
+	docker tag openedx/studio openedx/studio:${GITHUB_SHA}
 
 docker_auth:
 	echo "$$DOCKERHUB_PASSWORD" | docker login -u "$$DOCKERHUB_USERNAME" --password-stdin
 
 docker_push: docker_tag docker_auth ## push to docker hub
-	docker push 'openedx/edx-platform:latest'
-	docker push "openedx/edx-platform:${GITHUB_SHA}"
-	docker push 'openedx/edx-platform:latest-newrelic'
-	docker push "openedx/edx-platform:${GITHUB_SHA}-newrelic"
+	docker push 'openedx/lms:latest'
+	docker push "openedx/lms:${GITHUB_SHA}"
+	docker push 'openedx/lms-dev:latest'
+	docker push "openedx/lms-dev:${GITHUB_SHA}"
+	docker push 'openedx/studio:latest'
+	docker push "openedx/studio:${GITHUB_SHA}"
+	docker push 'openedx/studio-dev:latest'
+	docker push "openedx/studio-dev:${GITHUB_SHA}"
+
+docker_push_kyle:
+	docker tag openedx/lms kdmccormick96/lms
+	docker tag openedx/studio kdmccormick96/studio
+	docker tag openedx/lms-dev kdmccormick96/lms-dev
+	docker tag openedx/studio-dev kdmccormick96/studio-dev
+	docker push 'kdmccormick96/lms:latest'
+	docker push 'kdmccormick96/studio:latest'
+	docker push 'kdmccormick96/lms-dev:latest'
+	docker push 'kdmccormick96/studio-dev:latest'

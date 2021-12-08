@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Experimental! Not ready for production use.
+# Adapted from https://github.com/edx/edx-platform/blob/master/pavelib/assets.py
+set -xeuo pipefail
+cd /openedx/app/edxapp/edx-platform
+. ../edxapp_env
+
+DJANGO_SETTINGS_MODULE='' xmodule_assets common/static/xmodule
+
+mkdir -p common/static/common/js/vendor
+mkdir -p common/static/common/css/vendor
+
+find node_modules/@edx/studio-frontend/dist -type f \( -name \*.css -o -name \*.css.map \) | \
+	xargs cp --target-directory=common/static/common/css/vendor
+find node_modules/@edx/studio-frontend/dist -type f \! -name \*.css \! -name \*.css.map | \
+	xargs cp --target-directory=common/static/common/js/vendor
+
+cp -f --target-directory=common/static/common/js/vendor \
+	node_modules/backbone.paginator/lib/backbone.paginator.js \
+	node_modules/backbone/backbone.js \
+	node_modules/bootstrap/dist/js/bootstrap.bundle.js \
+	node_modules/hls.js/dist/hls.js \
+	node_modules/jquery-migrate/dist/jquery-migrate.js \
+	node_modules/jquery.scrollto/jquery.scrollTo.js \
+	node_modules/jquery/dist/jquery.js \
+	node_modules/moment-timezone/builds/moment-timezone-with-data.js \
+	node_modules/moment/min/moment-with-locales.js \
+	node_modules/picturefill/dist/picturefill.js \
+	node_modules/requirejs/require.js \
+	node_modules/underscore.string/dist/underscore.string.js \
+	node_modules/underscore/underscore.js \
+	node_modules/which-country/index.js \
+	node_modules/sinon/pkg/sinon.js \
+	node_modules/squirejs/src/Squire.js
+	# TODO: ^ sinon and square are supposedly dev-only.
+
+NODE_ENV=development \
+	STATIC_ROOT_LMS=/edx/var/edxapp/staticfiles \
+	STATIC_ROOT_CMS=/edx/var/edxapp/staticfiles/studio \
+	JS_ENV_EXTRA_CONFIG="{}" \
+	$(npm bin)/webpack --config=webpack.dev.config.js
+	# TODO: ^ this does a dev build
+
+./manage.py lms compile_sass lms
+./manage.py lms collectstatic --noinput \
+	--ignore "fixtures"  \
+	--ignore "karma_*.js" \
+	--ignore "spec" \
+	--ignore "spec_helpers" \
+	--ignore "spec-helpers" \
+	--ignore "xmodule_js" \
+	--ignore "geoip" \
+	--ignore "sass"
+
+./manage.py cms compile_sass cms
+./manage.py cms collectstatic --noinput \
+	--ignore "fixtures"  \
+	--ignore "karma_*.js" \
+	--ignore "spec" \
+	--ignore "spec_helpers" \
+	--ignore "spec-helpers" \
+	--ignore "xmodule_js" \
+	--ignore "geoip" \
+	--ignore "sass"
