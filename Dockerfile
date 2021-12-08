@@ -80,7 +80,7 @@ RUN nodeenv /edx/app/edxapp/nodeenv --node=12.11.1 --prebuilt
 RUN npm set progress=false && npm install
 
 ENV LMS_CFG /edx/etc/lms.yml
-ENV STUDIO_CFG /edx/etc/studio.yml
+ENV CMS_CFG /edx/etc/cms.yml
 
 # Copy over remaining code.
 # We do this as late as possible so that small changes to the repo don't bust
@@ -97,12 +97,12 @@ FROM lms as lms-newrelic
 RUN pip install newrelic
 CMD newrelic-admin run-program gunicorn -c /edx/app/edxapp/edx-platform/lms/docker_lms_gunicorn.py --name lms --bind=0.0.0.0:8000 --max-requests=1000 --access-logfile - lms.wsgi:application
 
-FROM base as studio
+FROM base as cms
 ENV SERVICE_VARIANT cms
 ENV DJANGO_SETTINGS_MODULE cms.envs.production
 EXPOSE 8010
 CMD gunicorn -c /edx/app/edxapp/edx-platform/cms/docker_cms_gunicorn.py --name cms --bind=0.0.0.0:8010 --max-requests=1000 --access-logfile - cms.wsgi:application
 
-FROM studio as studio-newrelic
+FROM cms as cms-newrelic
 RUN pip install newrelic
 CMD newrelic-admin run-program gunicorn -c /edx/app/edxapp/edx-platform/cms/docker_cms_gunicorn.py --name cms --bind=0.0.0.0:8010 --max-requests=1000 --access-logfile - cms.wsgi:application
