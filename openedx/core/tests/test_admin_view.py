@@ -37,11 +37,6 @@ class TestAdminView(TestCase):
 
     def test_admin_login_redirect(self):
         """Admin login will redirect towards the site login page."""
-        response = self.client.get(reverse('admin:login'), follow=True)
-        login_page_url = "{login_url}?next={redirect_url}".format(
-            login_url=reverse('signin_user'),
-            redirect_url='/admin',
-        )
-        self.assertRedirects(response, login_page_url)
-        assert response.status_code == 200
-
+        response = self.client.get(reverse('admin:login'))
+        assert response.url == '/login?next=/admin'
+        assert response.status_code == 302
