@@ -44,8 +44,7 @@ def login_redirect_to_lms(request):
 
 def redirect_to_lms_login_for_admin(request):
     """
-    This view redirect the admin/login url to the site's login page if
-    waffle switch is on otherwise returns the admin site's login view.
+    This view redirect the admin/login url to the site's login page.
     """
     return redirect('/login?next=/admin')
 
