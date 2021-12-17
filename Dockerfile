@@ -120,6 +120,7 @@ COPY . .
 # all requirements from scratch.
 RUN pip install -r requirements/edx/base.txt
 
+
 ##################################################
 # Define LMS non-dev target.
 FROM base as lms
@@ -134,6 +135,7 @@ CMD gunicorn \
     --max-requests=1000 \
     --access-logfile \
     - lms.wsgi:application
+
 
 ##################################################
 # Define Studio non-dev target.
@@ -150,6 +152,7 @@ CMD gunicorn \
     --access-logfile \
     - cms.wsgi:application
 
+
 ##################################################
 # Define intermediate dev target for LMS/Studio.
 #
@@ -160,7 +163,21 @@ CMD gunicorn \
 # in a single layer, shared between `lms-dev` and `studio-dev`.
 FROM base as dev
 RUN pip install -r requirements/edx/development.txt
+
+# Copy in configuration YAMLs and set EDX_PLATFORM_SETTINGS.
 ENV EDX_PLATFORM_SETTINGS='devstack_docker'
+RUN cp lms/envs/devstack-experimental.yml $LMS_CFG
+RUN cp cms/envs/devstack-experimental.yml $STUDIO_CFG
+
+# Temporary compatibility hack while devstack is supporting
+# both the old `edxops/edxapp` image and this image:
+# Add in /edx/->/openedx/ sylink and dummy ../edxapp_env file.
+# The edxapp_env file was originally needed for sourcing to get
+# environment variables like LMS_CFG, but now we just set
+# those variables right in the Dockerfile.
+RUN cd / && ln -s openedx edx
+RUN touch ../edxapp_env
+
 
 ##################################################
 #  Define LMS dev target.
