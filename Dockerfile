@@ -7,12 +7,9 @@ FROM ubuntu:focal as base
 # * Take advantage of Docker caching layers: aim to put commands in order of
 #   increasing cache-busting frequency.
 # * Related to ^, use no Ansible or Paver.
-# Long-term goals:
+# Long-term goal:
 # * Be a suitable base for production LMS and Studio images (THIS IS NOT YET THE CASE!).
 #
-# TODO: factor out an env-agnostic base from which a `dev` and `prod` stages
-#       can be derived (for both lms and studio).
-
 # Install system requirements.
 # We update, upgrade, and delete lists all in one layer
 # in order to reduce total image size.
@@ -60,9 +57,6 @@ RUN apt-get update && \
 # Set locale.
 RUN locale-gen en_US.UTF-8
 
-# Define and switch to working directory.
-WORKDIR /openedx/app/edxapp/edx-platform
-
 # Env vars: locale
 ENV LANG='en_US.UTF-8'
 ENV LANGUAGE='en_US:en'
@@ -70,9 +64,9 @@ ENV LC_ALL='en_US.UTF-8'
 
 # Env vars: configuration
 ENV CONFIG_ROOT='/openedx/etc/'
-ENV LMS_CFG='/openedx/etc/lms.yml'
-ENV STUDIO_CFG='/openedx/etc/studio.yml'
-ENV EDX_PLATFORM_SETTINGS='devstack_docker'
+ENV LMS_CFG="$CONFIG_ROOT/lms.yml"
+ENV STUDIO_CFG="$CONFIG_ROOT/studio.yml"
+ENV EDX_PLATFORM_SETTINGS='production'
 
 # Env vars: path
 ENV VIRTUAL_ENV='/openedx/app/edxapp/venvs/edxapp'
@@ -81,10 +75,14 @@ ENV PATH="./node_modules/.bin:${PATH}"
 ENV PATH="/openedx/app/edxapp/edx-platform/bin:${PATH}"
 ENV PATH="/openedx/app/edxapp/nodeenv/bin:${PATH}"
 
+# Create config directory. Create, define, and switch to working directory.
+RUN mkdir -p "$CONFIG_ROOT"
+WORKDIR /openedx/app/edxapp/edx-platform
+
 # Env vars: paver
 # We intentionally don't use paver in this Dockerfile, but Devstack may invoke paver commands
 # during provisioning. Enabling NO_PREREQ_INSTALL tells paver not to re-install Python
-# requirements for every paver command, saving a lot of time.
+# requirements for every paver command, potentially saving a lot of developer time.
 ENV NO_PREREQ_INSTALL='1'
 
 # Set up a Python virtual environment.
@@ -125,7 +123,6 @@ RUN pip install -r requirements/edx/base.txt
 # Define LMS non-dev target.
 FROM base as lms
 ENV SERVICE_VARIANT lms
-ENV EDX_PLATFORM_SETTINGS='production'
 ENV DJANGO_SETTINGS_MODULE="lms.envs.$EDX_PLATFORM_SETTINGS"
 EXPOSE 8000
 CMD gunicorn \
@@ -164,14 +161,14 @@ CMD gunicorn \
 FROM base as dev
 RUN pip install -r requirements/edx/development.txt
 
-# Copy in configuration YAMLs and set EDX_PLATFORM_SETTINGS.
+# Copy in configuration YAMLs and set EDX_PLATFORM_SErTTINGS.
 ENV EDX_PLATFORM_SETTINGS='devstack_docker'
 RUN cp lms/envs/devstack-experimental.yml $LMS_CFG
 RUN cp cms/envs/devstack-experimental.yml $STUDIO_CFG
 
 # Temporary compatibility hack while devstack is supporting
 # both the old `edxops/edxapp` image and this image:
-# Add in /edx/->/openedx/ sylink and dummy ../edxapp_env file.
+# Add in an /edx/ -> /openedx/ sylink and a dummy ../edxapp_env file.
 # The edxapp_env file was originally needed for sourcing to get
 # environment variables like LMS_CFG, but now we just set
 # those variables right in the Dockerfile.
