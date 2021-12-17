@@ -146,6 +146,3 @@ dist
 
 # Locally generated PII reports
 pii_report
-
-# Un-ignore all of container root, including /bin directory.
-!/container-root/**
