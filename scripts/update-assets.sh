@@ -2,8 +2,6 @@
 # Experimental! Not ready for production use.
 # Adapted from https://github.com/edx/edx-platform/blob/master/pavelib/assets.py
 set -xeuo pipefail
-cd /openedx/app/edxapp/edx-platform
-. ../edxapp_env
 
 DJANGO_SETTINGS_MODULE='' xmodule_assets common/static/xmodule
 

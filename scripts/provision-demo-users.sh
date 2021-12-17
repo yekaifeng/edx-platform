@@ -2,8 +2,6 @@
 # Experimental! Not ready for production use.
 # Adapted from https://github.com/edx/configuration/tree/master/playbooks/roles/demo
 set -xeuo pipefail
-cd /openedx/app/edxapp/edx-platform
-. ../edxapp_env
 
 DEMO_COURSE_KEY='course-v1:edX+DemoX+Demo_Course'
 

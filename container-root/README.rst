@@ -1,4 +1,0 @@
-Container filesystem root
-=========================
-
-TODO

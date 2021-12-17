@@ -1,4 +1,4 @@
-FROM ubuntu:focal as pre_base
+FROM ubuntu:focal as base
 
 # Warning: This file is experimental.
 #
@@ -63,50 +63,33 @@ RUN locale-gen en_US.UTF-8
 # Define and switch to working directory.
 WORKDIR /openedx/app/edxapp/edx-platform
 
-# Settings: locale
+# Env vars: locale
 ENV LANG='en_US.UTF-8'
 ENV LANGUAGE='en_US:en'
 ENV LC_ALL='en_US.UTF-8'
 
-# Settings: configuration
+# Env vars: configuration
 ENV CONFIG_ROOT='/openedx/etc/'
 ENV LMS_CFG='/openedx/etc/lms.yml'
 ENV STUDIO_CFG='/openedx/etc/studio.yml'
 ENV EDX_PLATFORM_SETTINGS='devstack_docker'
 
-# Settings: path
+# Env vars: path
 ENV VIRTUAL_ENV='/openedx/app/edxapp/venvs/edxapp'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PATH="./node_modules/.bin:${PATH}"
 ENV PATH="/openedx/app/edxapp/edx-platform/bin:${PATH}"
 ENV PATH="/openedx/app/edxapp/nodeenv/bin:${PATH}"
 
-# Settings: paver
+# Env vars: paver
 # We intentionally don't use paver in this Dockerfile, but Devstack may invoke paver commands
 # during provisioning. Enabling NO_PREREQ_INSTALL tells paver not to re-install Python
 # requirements for every paver command, saving a lot of time.
 ENV NO_PREREQ_INSTALL='1'
 
-# Copy in custom system files.
-COPY container-root /
-
-# Dump above environment vars to ../edxapp_env so they can be available to
-# those opening a shell against this container.
-RUN (echo "export LANG='$LANG'" \
-  && echo "export PATH='$PATH'" \
-  && echo "export LMS_CFG='$LMS_CFG'" \
-  && echo "export STUDIO_CFG='$STUDIO_CFG'" \
-  && echo "export NO_PREREQ_INSTALL='$NO_PREREQ_INSTALL'" \
-  && echo "export EDX_PLATFORM_SETTINGS='$EDX_PLATFORM_SETTINGS'" \
-    ) >> ../edxapp_env
-
 # Set up a Python virtual environment.
 # It is already 'activated' because $VIRTUAL_ENV/bin was put on $PATH.
 RUN python3.8 -m venv "$VIRTUAL_ENV"
-
-# TODO: This stage is purely for Dockerfile debugging purposes.
-# It should be removed when the image is no longer experimental.
-FROM pre_base AS base
 
 # Install Python requirements.
 # Requires copying over requirements files, but not entire repository.
@@ -169,13 +152,6 @@ CMD gunicorn \
 
 ##################################################
 # Define intermediate dev target for LMS/Studio.
-# Install development requirements and rewrite EDX_PLATFORM_SETTINGS
-# variable to ../edxapp_env, so ../edxapp_env will look like:
-#   export PATH='...''
-#   export ...
-#   export EDX_PLATFORM_SETTINGS=production
-#   export EDX_PLATFORM_SETTINGS=devstack_docker
-# Per bash semantics, the latter export will override the former.
 #
 # Although it might seem more logical to forego the `dev` stage
 # and instead base `lms-dev` and `studio-dev` off of `lms` and
@@ -185,7 +161,6 @@ CMD gunicorn \
 FROM base as dev
 RUN pip install -r requirements/edx/development.txt
 ENV EDX_PLATFORM_SETTINGS='devstack_docker'
-RUN echo "export EDX_PLATFORM_SETTINGS='$EDX_PLATFORM_SETTINGS'" >> ../edxapp_env
 
 ##################################################
 #  Define LMS dev target.
