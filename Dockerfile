@@ -63,7 +63,7 @@ ENV LANGUAGE='en_US:en'
 ENV LC_ALL='en_US.UTF-8'
 
 # Env vars: configuration
-ENV CONFIG_ROOT='/openedx/etc/'
+ENV CONFIG_ROOT='/openedx/etc'
 ENV LMS_CFG="$CONFIG_ROOT/lms.yml"
 ENV STUDIO_CFG="$CONFIG_ROOT/studio.yml"
 ENV EDX_PLATFORM_SETTINGS='production'
@@ -161,7 +161,7 @@ CMD gunicorn \
 FROM base as dev
 RUN pip install -r requirements/edx/development.txt
 
-# Copy in configuration YAMLs and set EDX_PLATFORM_SErTTINGS.
+# Copy in configuration YAMLs and set EDX_PLATFORM_SE1TTINGS.
 ENV EDX_PLATFORM_SETTINGS='devstack_docker'
 RUN cp lms/envs/devstack-experimental.yml $LMS_CFG
 RUN cp cms/envs/devstack-experimental.yml $STUDIO_CFG
