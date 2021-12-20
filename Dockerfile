@@ -63,21 +63,21 @@ ENV LANGUAGE='en_US:en'
 ENV LC_ALL='en_US.UTF-8'
 
 # Env vars: configuration
-ENV CONFIG_ROOT='/openedx/etc'
+ENV CONFIG_ROOT='/edx/etc'
 ENV LMS_CFG="$CONFIG_ROOT/lms.yml"
 ENV STUDIO_CFG="$CONFIG_ROOT/studio.yml"
 ENV EDX_PLATFORM_SETTINGS='production'
 
 # Env vars: path
-ENV VIRTUAL_ENV='/openedx/app/edxapp/venvs/edxapp'
+ENV VIRTUAL_ENV='/edx/app/edxapp/venvs/edxapp'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PATH="./node_modules/.bin:${PATH}"
-ENV PATH="/openedx/app/edxapp/edx-platform/bin:${PATH}"
-ENV PATH="/openedx/app/edxapp/nodeenv/bin:${PATH}"
+ENV PATH="/edx/app/edxapp/edx-platform/bin:${PATH}"
+ENV PATH="/edx/app/edxapp/nodeenv/bin:${PATH}"
 
 # Create config directory. Create, define, and switch to working directory.
 RUN mkdir -p "$CONFIG_ROOT"
-WORKDIR /openedx/app/edxapp/edx-platform
+WORKDIR /edx/app/edxapp/edx-platform
 
 # Env vars: paver
 # We intentionally don't use paver in this Dockerfile, but Devstack may invoke paver commands
@@ -105,7 +105,7 @@ RUN pip install -r requirements/edx/base-minus-local.txt
 # Must be done after Python requirements, since nodeenv is installed
 # via pip.
 # The node environment is already 'activated' because its .../bin was put on $PATH.
-RUN nodeenv /openedx/app/edxapp/nodeenv --node=12.11.1 --prebuilt
+RUN nodeenv /edx/app/edxapp/nodeenv --node=12.11.1 --prebuilt
 COPY package.json package.json
 COPY package-lock.json package-lock.json
 RUN npm set progress=false && npm install
@@ -126,7 +126,7 @@ ENV SERVICE_VARIANT lms
 ENV DJANGO_SETTINGS_MODULE="lms.envs.$EDX_PLATFORM_SETTINGS"
 EXPOSE 8000
 CMD gunicorn \
-    -c /openedx/app/edxapp/edx-platform/lms/docker_lms_gunicorn.py \
+    -c /edx/app/edxapp/edx-platform/lms/docker_lms_gunicorn.py \
     --name lms \
     --bind=0.0.0.0:8000 \
     --max-requests=1000 \
@@ -142,7 +142,7 @@ ENV EDX_PLATFORM_SETTINGS='production'
 ENV DJANGO_SETTINGS_MODULE="cms.envs.$EDX_PLATFORM_SETTINGS"
 EXPOSE 8010
 CMD gunicorn \
-    -c /openedx/app/edxapp/edx-platform/cms/docker_cms_gunicorn.py \
+    -c /edx/app/edxapp/edx-platform/cms/docker_cms_gunicorn.py \
     --name cms \
     --bind=0.0.0.0:8010 \
     --max-requests=1000 \
@@ -168,11 +168,10 @@ RUN cp cms/envs/devstack-experimental.yml $STUDIO_CFG
 
 # Temporary compatibility hack while devstack is supporting
 # both the old `edxops/edxapp` image and this image:
-# Add in an /edx/ -> /openedx/ sylink and a dummy ../edxapp_env file.
+# Add in a dummy ../edxapp_env file.
 # The edxapp_env file was originally needed for sourcing to get
 # environment variables like LMS_CFG, but now we just set
 # those variables right in the Dockerfile.
-RUN cd / && ln -s openedx edx
 RUN touch ../edxapp_env
 
 
