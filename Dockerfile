@@ -179,6 +179,7 @@ RUN touch ../edxapp_env
 ##################################################
 #  Define LMS dev target.
 FROM dev as lms-dev
+ENV SERVICE_VARIANT lms
 ENV DJANGO_SETTINGS_MODULE="lms.envs.$EDX_PLATFORM_SETTINGS"
 EXPOSE 18000
 CMD while true; do python ./manage.py lms runserver 0.0.0.0:18000; sleep 2; done
@@ -187,6 +188,7 @@ CMD while true; do python ./manage.py lms runserver 0.0.0.0:18000; sleep 2; done
 ##################################################
 #  Define Studio dev target.
 FROM dev as studio-dev
+ENV SERVICE_VARIANT cms
 ENV DJANGO_SETTINGS_MODULE="cms.envs.$EDX_PLATFORM_SETTINGS"
 EXPOSE 18010
 CMD while true; do python ./manage.py cms runserver 0.0.0.0:18010; sleep 2; done
