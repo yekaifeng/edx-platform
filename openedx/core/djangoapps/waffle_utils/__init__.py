@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 class CourseWaffleFlag(LegacyWaffleFlag):
     """
     Represents a single waffle flag that can be forced on/off for a course. This class should be used instead of
-    WaffleFlag when in the context of a course.
+    WaffleFlag when in the context of a course. This class will also respect any Org-level overrides, though
+    Course-level overrides will take precedence.
 
     Uses a cached waffle namespace.
 
@@ -57,7 +58,7 @@ class CourseWaffleFlag(LegacyWaffleFlag):
             course_key (CourseKey): The course to check for override before checking waffle.
         """
         # Import is placed here to avoid model import at project startup.
-        from .models import WaffleFlagCourseOverrideModel
+        from .models import WaffleFlagCourseOverrideModel, WaffleFlagOrgOverrideModel
 
         cache_key = f"{self.name}.{str(course_key)}"
         course_override = self.cached_flags().get(cache_key)
@@ -72,6 +73,16 @@ class CourseWaffleFlag(LegacyWaffleFlag):
             return True
         if course_override == WaffleFlagCourseOverrideModel.ALL_CHOICES.off:
             return False
+
+        # If there's no course-specific override, fall back to checking at the
+        # org-level.
+        org = course_key.org
+        org_override = WaffleFlagOrgOverrideModel.override_value(self.name, org)
+        if org_override == WaffleFlagCourseOverrideModel.ALL_CHOICES.on:
+            return True
+        if org_override == WaffleFlagCourseOverrideModel.ALL_CHOICES.off:
+            return False
+
         return None
 
     def is_enabled(self, course_key=None):  # pylint: disable=arguments-differ

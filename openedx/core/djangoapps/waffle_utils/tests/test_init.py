@@ -12,12 +12,14 @@ from edx_django_utils.cache import RequestCache
 from opaque_keys.edx.keys import CourseKey
 from waffle.testutils import override_flag
 
+from openedx.core.djangolib.testing.utils import CacheIsolationMixin, CacheIsolationTestCase,
+
 from .. import CourseWaffleFlag
-from ..models import WaffleFlagCourseOverrideModel
+from ..models import WaffleFlagCourseOverrideModel, WaffleFlagOrgOverrideModel
 
 
 @ddt.ddt
-class TestCourseWaffleFlag(TestCase):
+class TestCourseWaffleFlag(CacheIsolationMixin, TestCase):
     """
     Tests the CourseWaffleFlag.
     """
@@ -73,6 +75,25 @@ class TestCourseWaffleFlag(TestCase):
             # course which should get the default value of False.
             second_value = False
             assert self.TEST_COURSE_FLAG.is_enabled(self.TEST_COURSE_2_KEY) == second_value
+
+    @ddt.data(
+        (False, WaffleFlagOrgOverrideModel.ALL_CHOICES.unset, False),
+        (True, WaffleFlagOrgOverrideModel.ALL_CHOICES.unset, True),
+        (False, WaffleFlagOrgOverrideModel.ALL_CHOICES.on, True),
+        (True, WaffleFlagOrgOverrideModel.ALL_CHOICES.on, True),
+        (False, WaffleFlagOrgOverrideModel.ALL_CHOICES.off, False),
+        (True, WaffleFlagOrgOverrideModel.ALL_CHOICES.off, False),
+    )
+    @ddt.unpack
+    def test_org_waffle_flag(self, waffle_enabled, org_override, is_enabled):
+        WaffleFlagCourseOverrideModel.objects.create(
+            waffle_flag=self.NAMESPACED_FLAG_NAME,
+            org='FunnyWalksX',
+            override_choice=org_override,
+            note=''
+        )
+        with override_flag(self.NAMESPACED_FLAG_NAME, active=waffle_enabled):
+            assert self.TEST_COURSE_FLAG.is_enabled() == is_enabled
 
     def test_undefined_waffle_flag(self):
         """
